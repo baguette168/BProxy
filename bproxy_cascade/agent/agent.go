@@ -209,11 +209,24 @@ func (a *Agent) handleConnect(msg *pb.Message, stream net.Conn) {
         if connectPayload.TargetAgentId != a.id {
                 // Need to forward to a child agent
                 a.mu.Lock()
+                // First check if the target is a direct child
                 childSession, exists := a.relayMap[connectPayload.TargetAgentId]
+                
+                // If not a direct child, select any available child to forward the request
+                // The child will recursively handle the request until it reaches the target
+                if !exists && len(a.relayMap) > 0 {
+                        for childID, session := range a.relayMap {
+                                log.Printf("Target %s is not a direct child, forwarding via %s", 
+                                        connectPayload.TargetAgentId, childID)
+                                childSession = session
+                                exists = true
+                                break
+                        }
+                }
                 a.mu.Unlock()
 
                 if !exists {
-                        log.Printf("Cannot forward connect to %s: not a child", connectPayload.TargetAgentId)
+                        log.Printf("No children available to forward connect to %s", connectPayload.TargetAgentId)
                         response := &pb.Message{
                                 Type:      pb.MessageType_DATA,
                                 SessionId: msg.SessionId,
