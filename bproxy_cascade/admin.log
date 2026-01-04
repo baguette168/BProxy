@@ -1,0 +1,18 @@
+2026/01/04 02:49:34 Starting BProxy Admin Server...
+2026/01/04 02:49:34 Admin server listening on [::]:8443
+2026/01/04 02:49:36 Agent registered: cd0cc8bf-0007-423c-a292-ea4524ca5302 (hostname: f06323e850af, IPs: [172.17.0.3])
+2026/01/04 02:49:38 Agent registered: e9b0cdab-a0a4-4cd1-8251-296dd7bcd5b9 (hostname: f06323e850af, IPs: [172.17.0.3])
+2026/01/04 02:49:51 Heartbeat from cd0cc8bf-0007-423c-a292-ea4524ca5302
+2026/01/04 02:49:53 Heartbeat from e9b0cdab-a0a4-4cd1-8251-296dd7bcd5b9
+2026/01/04 02:50:07 Heartbeat from cd0cc8bf-0007-423c-a292-ea4524ca5302
+2026/01/04 02:50:09 Heartbeat from e9b0cdab-a0a4-4cd1-8251-296dd7bcd5b9
+2026/01/04 02:50:22 Heartbeat from cd0cc8bf-0007-423c-a292-ea4524ca5302
+2026/01/04 02:50:24 Heartbeat from e9b0cdab-a0a4-4cd1-8251-296dd7bcd5b9
+2026/01/04 02:50:38 Heartbeat from cd0cc8bf-0007-423c-a292-ea4524ca5302
+2026/01/04 02:50:40 Heartbeat from e9b0cdab-a0a4-4cd1-8251-296dd7bcd5b9
+2026/01/04 02:50:53 Heartbeat from cd0cc8bf-0007-423c-a292-ea4524ca5302
+2026/01/04 02:50:55 Heartbeat from e9b0cdab-a0a4-4cd1-8251-296dd7bcd5b9
+2026/01/04 02:51:09 Heartbeat from cd0cc8bf-0007-423c-a292-ea4524ca5302
+2026/01/04 02:51:11 Heartbeat from e9b0cdab-a0a4-4cd1-8251-296dd7bcd5b9
+2026/01/04 02:51:24 Heartbeat from cd0cc8bf-0007-423c-a292-ea4524ca5302
+2026/01/04 02:51:26 Heartbeat from e9b0cdab-a0a4-4cd1-8251-296dd7bcd5b9
