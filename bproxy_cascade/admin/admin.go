@@ -185,6 +185,10 @@ func (a *Admin) handleStream(agentID string, stream net.Conn) {
                 }
                 protocol.WriteMessage(stream, ackMsg)
 
+        case pb.MessageType_REGISTER:
+                // Handle cascaded agent registration
+                a.handleCascadeRegister(msg, stream)
+
         case pb.MessageType_DATA:
                 log.Printf("Data from %s: %d bytes", agentID, len(msg.Payload))
 
@@ -195,6 +199,49 @@ func (a *Admin) handleStream(agentID string, stream net.Conn) {
         default:
                 log.Printf("Unknown message type from %s: %v", agentID, msg.Type)
         }
+}
+
+func (a *Admin) handleCascadeRegister(msg *pb.Message, stream net.Conn) {
+        regPayload := &pb.RegisterPayload{}
+        if err := proto.Unmarshal(msg.Payload, regPayload); err != nil {
+                log.Printf("Failed to unmarshal cascade register payload: %v", err)
+                return
+        }
+
+        childID := regPayload.AgentId
+        parentID := regPayload.ParentId
+
+        log.Printf("Cascade agent registered: %s (hostname: %s, parent: %s)", 
+                childID, regPayload.Hostname, parentID)
+
+        // Add node to topology
+        a.topology.AddNode(childID, regPayload.Hostname, regPayload.LocalIps, 
+                regPayload.Os, regPayload.Arch)
+
+        // Establish parent-child relationship
+        if parentID != "" && parentID != "admin" {
+                if err := a.topology.AddEdge(parentID, childID); err != nil {
+                        log.Printf("Warning: Failed to add topology edge %s -> %s: %v", 
+                                parentID, childID, err)
+                }
+        }
+
+        // Send ACK response
+        ackMsg := &pb.Message{
+                Type:      pb.MessageType_COMMAND,
+                SessionId: msg.SessionId,
+                SourceId:  "admin",
+                TargetId:  childID,
+                Timestamp: time.Now().Unix(),
+                Payload:   []byte("OK"),
+        }
+
+        if err := protocol.WriteMessage(stream, ackMsg); err != nil {
+                log.Printf("Failed to send cascade ACK: %v", err)
+                return
+        }
+
+        log.Printf("Cascade agent %s registered successfully", childID)
 }
 
 func (a *Admin) relayMessage(msg *pb.Message) error {
