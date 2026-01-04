@@ -205,6 +205,107 @@ func (a *Agent) handleConnect(msg *pb.Message, stream net.Conn) {
                 return
         }
 
+        // Check if this agent is the target or if we need to forward to a child
+        if connectPayload.TargetAgentId != a.id {
+                // Need to forward to a child agent
+                a.mu.Lock()
+                childSession, exists := a.relayMap[connectPayload.TargetAgentId]
+                a.mu.Unlock()
+
+                if !exists {
+                        log.Printf("Cannot forward connect to %s: not a child", connectPayload.TargetAgentId)
+                        response := &pb.Message{
+                                Type:      pb.MessageType_DATA,
+                                SessionId: msg.SessionId,
+                                SourceId:  a.id,
+                                TargetId:  msg.SourceId,
+                                Timestamp: time.Now().Unix(),
+                                Payload:   []byte("Failed"),
+                        }
+                        protocol.WriteMessage(stream, response)
+                        return
+                }
+
+                // Forward the connect request to the child
+                childStream, err := childSession.OpenStream()
+                if err != nil {
+                        log.Printf("Failed to open stream to child: %v", err)
+                        response := &pb.Message{
+                                Type:      pb.MessageType_DATA,
+                                SessionId: msg.SessionId,
+                                SourceId:  a.id,
+                                TargetId:  msg.SourceId,
+                                Timestamp: time.Now().Unix(),
+                                Payload:   []byte("Failed"),
+                        }
+                        protocol.WriteMessage(stream, response)
+                        return
+                }
+                defer childStream.Close()
+
+                // Forward the message
+                if err := protocol.WriteMessage(childStream, msg); err != nil {
+                        log.Printf("Failed to forward connect to child: %v", err)
+                        response := &pb.Message{
+                                Type:      pb.MessageType_DATA,
+                                SessionId: msg.SessionId,
+                                SourceId:  a.id,
+                                TargetId:  msg.SourceId,
+                                Timestamp: time.Now().Unix(),
+                                Payload:   []byte("Failed"),
+                        }
+                        protocol.WriteMessage(stream, response)
+                        return
+                }
+
+                // Read response from child
+                childResponse, err := protocol.ReadMessage(childStream)
+                if err != nil {
+                        log.Printf("Failed to read response from child: %v", err)
+                        response := &pb.Message{
+                                Type:      pb.MessageType_DATA,
+                                SessionId: msg.SessionId,
+                                SourceId:  a.id,
+                                TargetId:  msg.SourceId,
+                                Timestamp: time.Now().Unix(),
+                                Payload:   []byte("Failed"),
+                        }
+                        protocol.WriteMessage(stream, response)
+                        return
+                }
+
+                // Forward response back
+                if err := protocol.WriteMessage(stream, childResponse); err != nil {
+                        log.Printf("Failed to forward response: %v", err)
+                        return
+                }
+
+                if string(childResponse.Payload) != "Connected" {
+                        log.Printf("Child connection failed")
+                        return
+                }
+
+                log.Printf("Forwarding tunnel data between parent and child for %s", connectPayload.TargetAgentId)
+
+                // Relay data between parent stream and child stream
+                errChan := make(chan error, 2)
+
+                go func() {
+                        _, err := io.Copy(childStream, stream)
+                        errChan <- err
+                }()
+
+                go func() {
+                        _, err := io.Copy(stream, childStream)
+                        errChan <- err
+                }()
+
+                <-errChan
+                log.Printf("Tunnel relay closed for %s", connectPayload.TargetAgentId)
+                return
+        }
+
+        // This agent is the target, connect to the actual destination
         targetAddr := fmt.Sprintf("%s:%d", connectPayload.TargetAddress, connectPayload.TargetPort)
         log.Printf("Connecting to %s", targetAddr)
 
@@ -437,7 +538,9 @@ func (a *Agent) handleCascadeConnection(conn net.Conn) {
         }
         defer parentStream.Close()
 
+        // Set this agent as the parent of the child
         regPayload.AgentId = childID
+        regPayload.ParentId = a.id
         payload, _ := proto.Marshal(regPayload)
 
         relayMsg := &pb.Message{

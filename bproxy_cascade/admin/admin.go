@@ -106,7 +106,8 @@ func (a *Admin) handleConnection(conn net.Conn) {
         }
 
         agentID := regPayload.AgentId
-        log.Printf("Agent registered: %s (hostname: %s, IPs: %v)", agentID, regPayload.Hostname, regPayload.LocalIps)
+        parentID := regPayload.ParentId
+        log.Printf("Agent registered: %s (hostname: %s, IPs: %v, parent: %s)", agentID, regPayload.Hostname, regPayload.LocalIps, parentID)
 
         a.mu.Lock()
         a.agents[agentID] = &AgentConnection{
@@ -117,6 +118,13 @@ func (a *Admin) handleConnection(conn net.Conn) {
         a.mu.Unlock()
 
         a.topology.AddNode(agentID, regPayload.Hostname, regPayload.LocalIps, regPayload.Os, regPayload.Arch)
+        
+        // If this is a cascaded agent, establish parent-child relationship in topology
+        if parentID != "" && parentID != "admin" {
+                if err := a.topology.AddEdge(parentID, agentID); err != nil {
+                        log.Printf("Warning: Failed to add topology edge %s -> %s: %v", parentID, agentID, err)
+                }
+        }
 
         ackMsg := &pb.Message{
                 Type:      pb.MessageType_COMMAND,
@@ -365,12 +373,23 @@ func (a *Admin) handleSocks5Connection(clientConn net.Conn, targetID string) {
 
         log.Printf("SOCKS5 request: %s:%d via agent %s", req.DstAddr, req.DstPort, targetID)
 
+        // Get the path to the target agent using topology
+        path := a.topology.GetPath(targetID)
+        if len(path) == 0 {
+                log.Printf("No path to target agent %s", targetID)
+                socks5.SendReply(clientConn, socks5.ReplyHostUnreachable)
+                return
+        }
+
+        // The first hop is always the direct connection
+        firstHop := path[0]
+        
         a.mu.RLock()
-        agentConn, exists := a.agents[targetID]
+        agentConn, exists := a.agents[firstHop]
         a.mu.RUnlock()
 
         if !exists {
-                log.Printf("Target agent %s not found", targetID)
+                log.Printf("First hop agent %s not found", firstHop)
                 socks5.SendReply(clientConn, socks5.ReplyHostUnreachable)
                 return
         }
@@ -429,7 +448,7 @@ func (a *Admin) handleSocks5Connection(clientConn net.Conn, targetID string) {
                 return
         }
 
-        log.Printf("SOCKS5 tunnel established: %s:%d", req.DstAddr, req.DstPort)
+        log.Printf("SOCKS5 tunnel established: %s:%d via path %v", req.DstAddr, req.DstPort, path)
 
         errChan := make(chan error, 2)
 

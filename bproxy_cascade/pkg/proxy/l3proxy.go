@@ -76,7 +76,7 @@ func (lp *L3Proxy) handlePacket(packet []byte) error {
 		return err
 	}
 
-	msg := &pb.Message{
+	_ = &pb.Message{
 		Type:      pb.MessageType_DATA,
 		SessionId: sessionID,
 		SourceId:  "admin",

@@ -170,6 +170,7 @@ type RegisterPayload struct {
 	LocalIps      []string               `protobuf:"bytes,3,rep,name=local_ips,json=localIps,proto3" json:"local_ips,omitempty"`
 	Os            string                 `protobuf:"bytes,4,opt,name=os,proto3" json:"os,omitempty"`
 	Arch          string                 `protobuf:"bytes,5,opt,name=arch,proto3" json:"arch,omitempty"`
+	ParentId      string                 `protobuf:"bytes,6,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -235,6 +236,13 @@ func (x *RegisterPayload) GetOs() string {
 func (x *RegisterPayload) GetArch() string {
 	if x != nil {
 		return x.Arch
+	}
+	return ""
+}
+
+func (x *RegisterPayload) GetParentId() string {
+	if x != nil {
+		return x.ParentId
 	}
 	return ""
 }
@@ -475,13 +483,14 @@ const file_proto_message_proto_rawDesc = "" +
 	"\apayload\x18\x03 \x01(\fR\apayload\x12\x1b\n" +
 	"\tsource_id\x18\x04 \x01(\tR\bsourceId\x12\x1b\n" +
 	"\ttarget_id\x18\x05 \x01(\tR\btargetId\x12\x1c\n" +
-	"\ttimestamp\x18\x06 \x01(\x03R\ttimestamp\"\x89\x01\n" +
+	"\ttimestamp\x18\x06 \x01(\x03R\ttimestamp\"\xa6\x01\n" +
 	"\x0fRegisterPayload\x12\x19\n" +
 	"\bagent_id\x18\x01 \x01(\tR\aagentId\x12\x1a\n" +
 	"\bhostname\x18\x02 \x01(\tR\bhostname\x12\x1b\n" +
 	"\tlocal_ips\x18\x03 \x03(\tR\blocalIps\x12\x0e\n" +
 	"\x02os\x18\x04 \x01(\tR\x02os\x12\x12\n" +
-	"\x04arch\x18\x05 \x01(\tR\x04arch\"K\n" +
+	"\x04arch\x18\x05 \x01(\tR\x04arch\x12\x1b\n" +
+	"\tparent_id\x18\x06 \x01(\tR\bparentId\"K\n" +
 	"\x10HeartbeatPayload\x12\x19\n" +
 	"\bagent_id\x18\x01 \x01(\tR\aagentId\x12\x1c\n" +
 	"\ttimestamp\x18\x02 \x01(\x03R\ttimestamp\"\xa9\x01\n" +
