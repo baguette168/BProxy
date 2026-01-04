@@ -28,6 +28,7 @@ message RegisterPayload {
   repeated string local_ips = 3;
   string os = 4;
   string arch = 5;
+  string parent_id = 6;
 }
 
 message HeartbeatPayload {
