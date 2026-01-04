@@ -603,7 +603,13 @@ func (a *Agent) relayChildMessage(childID string, childStream net.Conn) {
                 return
         }
 
-        msg.SourceId = childID
+        // 保留原始 SourceId，不要覆盖！
+        // 只有当 SourceId 为空时才设置为 childID
+        if msg.SourceId == "" {
+                msg.SourceId = childID
+        }
+        
+        log.Printf("Relaying %v message from %s via child %s", msg.Type, msg.SourceId, childID)
 
         parentStream, err := a.session.OpenStream()
         if err != nil {
