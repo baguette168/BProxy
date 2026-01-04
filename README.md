@@ -1,10 +1,4 @@
-🥖 BProxy - 多级 SOCKS5 代理工具
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go" alt="Go Version">
-  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey" alt="Platform">
-  <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
-</p>
+# 🥖 BProxy - 多级 SOCKS5 代理工具
 
 BProxy 是一款面向渗透测试场景的多级 SOCKS5 代理工具，专为解决复杂内网环境（如 Active Directory 域）中的代理需求而设计。
 
