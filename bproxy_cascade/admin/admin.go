@@ -173,14 +173,20 @@ func (a *Admin) handleStream(agentID string, stream net.Conn) {
 
         switch msg.Type {
         case pb.MessageType_HEARTBEAT:
-                a.topology.UpdateHeartbeat(agentID)
-                log.Printf("Heartbeat from %s", agentID)
+                // Get the original sender of the heartbeat (may be a cascaded agent)
+                heartbeatSourceId := msg.SourceId
+                if heartbeatSourceId == "" {
+                        heartbeatSourceId = agentID
+                }
+                
+                a.topology.UpdateHeartbeat(heartbeatSourceId)
+                log.Printf("Heartbeat from %s", heartbeatSourceId)
 
                 ackMsg := &pb.Message{
                         Type:      pb.MessageType_HEARTBEAT,
                         SessionId: msg.SessionId,
                         SourceId:  "admin",
-                        TargetId:  agentID,
+                        TargetId:  heartbeatSourceId,
                         Timestamp: time.Now().Unix(),
                 }
                 protocol.WriteMessage(stream, ackMsg)
