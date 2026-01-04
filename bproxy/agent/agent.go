@@ -396,7 +396,7 @@ func (a *Agent) handleRelay(msg *pb.Message, stream net.Conn) {
 }
 
 func (a *Agent) heartbeatLoop() {
-        ticker := time.NewTicker(15 * time.Second)
+        ticker := time.NewTicker(10 * time.Second)
         defer ticker.Stop()
 
         for range ticker.C {
